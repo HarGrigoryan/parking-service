@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ResidentialCommunityRepository extends JpaRepository<ResidentialCommunity, Long> {
-    ResidentialCommunity findByCountryAndCityAndStreet(String country, String city, String street);
 
     ResidentialCommunity findByName(String name);
+
 }
