@@ -16,4 +16,12 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(ResourceDoesNotExistException.class)
+    public ResponseEntity<ExceptionResponse> resourceDoesNotExistException(ResourceDoesNotExistException e) {
+        return new ResponseEntity<>(ExceptionResponse
+                .builder().withMessage(e.getMessage()).
+                withStatus(HttpStatus.BAD_REQUEST).build(),
+                HttpStatus.BAD_REQUEST);
+    }
+
 }
