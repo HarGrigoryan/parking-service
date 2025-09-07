@@ -24,4 +24,14 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidArgumentException.class)
+    public ResponseEntity<ExceptionResponse> invalidArgumentException(InvalidArgumentException e) {
+        return new ResponseEntity<>(ExceptionResponse
+                .builder()
+                .withMessage(e.getMessage())
+                .withStatus(HttpStatus.BAD_REQUEST)
+                .build(),
+                HttpStatus.BAD_REQUEST);
+    }
+
 }
