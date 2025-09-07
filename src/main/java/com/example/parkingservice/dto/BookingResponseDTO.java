@@ -2,7 +2,9 @@ package com.example.parkingservice.dto;
 
 import com.example.parkingservice.enums.BookingStatus;
 import com.example.parkingservice.persistance.entity.Booking;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
@@ -10,6 +12,8 @@ import java.time.Instant;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class BookingResponseDTO {
 
     private Long id;

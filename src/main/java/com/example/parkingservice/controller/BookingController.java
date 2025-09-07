@@ -1,7 +1,9 @@
 package com.example.parkingservice.controller;
 
+import com.example.parkingservice.criteria.BookingSearchCriteria;
 import com.example.parkingservice.dto.BookingRequestDTO;
 import com.example.parkingservice.dto.BookingResponseDTO;
+import com.example.parkingservice.dto.PageResponseDTO;
 import com.example.parkingservice.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,11 @@ public class BookingController {
     @GetMapping("/{id}")
     public ResponseEntity<BookingResponseDTO> getBookingById(@PathVariable Long id) {
         return ResponseEntity.ok(bookingService.getBookingById(id));
+    }
+
+    @GetMapping
+    public PageResponseDTO<BookingResponseDTO> getBookings(BookingSearchCriteria criteria) {
+        return bookingService.getBookings(criteria);
     }
 
     @PostMapping

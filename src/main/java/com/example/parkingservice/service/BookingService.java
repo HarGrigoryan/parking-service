@@ -1,7 +1,9 @@
 package com.example.parkingservice.service;
 
+import com.example.parkingservice.criteria.BookingSearchCriteria;
 import com.example.parkingservice.dto.BookingRequestDTO;
 import com.example.parkingservice.dto.BookingResponseDTO;
+import com.example.parkingservice.dto.PageResponseDTO;
 import com.example.parkingservice.enums.BookingStatus;
 import com.example.parkingservice.exception.InvalidArgumentException;
 import com.example.parkingservice.exception.ResourceDoesNotExistException;
@@ -11,6 +13,7 @@ import com.example.parkingservice.persistance.repository.BookingRepository;
 import com.example.parkingservice.persistance.repository.ParkingSpotRepository;
 import com.example.parkingservice.persistance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -85,4 +88,8 @@ public class BookingService {
                 || !e1.isBefore(s2) && !e1.isAfter(e2);
     }
 
+    public PageResponseDTO<BookingResponseDTO> getBookings(BookingSearchCriteria criteria) {
+        Page<BookingResponseDTO> page = bookingRepository.findAll(criteria, criteria.buildPageRequest());
+        return PageResponseDTO.from(page);
+    }
 }
