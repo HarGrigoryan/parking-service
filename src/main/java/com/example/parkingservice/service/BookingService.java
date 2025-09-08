@@ -84,8 +84,7 @@ public class BookingService {
     }
 
     private boolean doIntervalsOverlap(Instant s1, Instant e1, Instant s2,  Instant e2) {
-        return !s1.isBefore(s2) && !s1.isAfter(e2)
-                || !e1.isBefore(s2) && !e1.isAfter(e2);
+        return !s1.isAfter(e2) && !e1.isBefore(s2);
     }
 
     public PageResponseDTO<BookingResponseDTO> getBookings(BookingSearchCriteria criteria) {
