@@ -1,5 +1,7 @@
 package com.example.parkingservice.controller;
 
+import com.example.parkingservice.criteria.ParkingSpotSearchCriteria;
+import com.example.parkingservice.dto.PageResponseDTO;
 import com.example.parkingservice.dto.ParkingSpotRequestDTO;
 import com.example.parkingservice.dto.ParkingSpotResponseDTO;
 import com.example.parkingservice.service.ParkingSpotService;
@@ -19,6 +21,11 @@ public class ParkingSpotController {
     @GetMapping("/{id}")
     public ResponseEntity<ParkingSpotResponseDTO> getParkingSpotById(@PathVariable Long id) {
         return ResponseEntity.ok(parkingSpotService.getById(id));
+    }
+
+    @GetMapping
+    public PageResponseDTO<ParkingSpotResponseDTO> getParkingSpots(ParkingSpotSearchCriteria searchCriteria) {
+        return parkingSpotService.getParkingSpots(searchCriteria);
     }
 
     @PostMapping

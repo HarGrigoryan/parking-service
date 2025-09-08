@@ -3,11 +3,15 @@ package com.example.parkingservice.dto;
 import com.example.parkingservice.enums.ParkingSpotStatus;
 import com.example.parkingservice.enums.ParkingSpotType;
 import com.example.parkingservice.persistance.entity.ParkingSpot;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ParkingSpotResponseDTO {
 
     private Long id;
