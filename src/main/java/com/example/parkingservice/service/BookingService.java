@@ -56,9 +56,8 @@ public class BookingService {
 
 
     public void removeBookingById(Long id) {
-        if(!bookingRepository.existsById(id))
-            throw new ResourceDoesNotExistException(id, "Booking");
-        bookingRepository.deleteById(id);
+        Booking booking = bookingRepository.findById(id).orElseThrow(() -> new ResourceDoesNotExistException(id, "Booking"));
+        bookingRepository.delete(booking);
     }
 
     // utility methods

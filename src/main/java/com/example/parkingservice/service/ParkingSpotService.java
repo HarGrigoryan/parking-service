@@ -71,7 +71,7 @@ public class ParkingSpotService {
 
     public void deleteParkingSpotById(Long id) {
         ParkingSpot parkingSpot = parkingSpotRepository.findById(id).orElseThrow(() -> new ResourceDoesNotExistException(id, "Parking spot"));
-        parkingSpotRepository.deleteById(parkingSpot.getId());
+        parkingSpotRepository.delete(parkingSpot);
     }
 
     public PageResponseDTO<ParkingSpotResponseDTO> getParkingSpots(ParkingSpotSearchCriteria searchCriteria) {

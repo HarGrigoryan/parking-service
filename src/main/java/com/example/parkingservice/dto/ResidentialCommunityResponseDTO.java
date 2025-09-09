@@ -26,7 +26,7 @@ public class ResidentialCommunityResponseDTO {
     private long updatedAt;
 
 
-    public static ResidentialCommunityResponseDTO entityToDTO(ResidentialCommunity rC)
+    public static ResidentialCommunityResponseDTO from(ResidentialCommunity rC)
     {
         ResidentialCommunityResponseDTO dto = new ResidentialCommunityResponseDTO();
         dto.setId(rC.getId());
