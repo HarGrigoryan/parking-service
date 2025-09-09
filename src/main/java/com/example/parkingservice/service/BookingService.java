@@ -5,11 +5,13 @@ import com.example.parkingservice.dto.BookingRequestDTO;
 import com.example.parkingservice.dto.BookingResponseDTO;
 import com.example.parkingservice.dto.PageResponseDTO;
 import com.example.parkingservice.enums.BookingStatus;
+import com.example.parkingservice.exception.BookingException;
 import com.example.parkingservice.exception.InvalidArgumentException;
 import com.example.parkingservice.exception.ResourceDoesNotExistException;
 import com.example.parkingservice.persistance.entity.Booking;
 import com.example.parkingservice.persistance.entity.ParkingSpot;
 import com.example.parkingservice.persistance.repository.BookingRepository;
+import com.example.parkingservice.persistance.repository.MembershipRepository;
 import com.example.parkingservice.persistance.repository.ParkingSpotRepository;
 import com.example.parkingservice.persistance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,6 +30,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final ParkingSpotRepository parkingSpotRepository;
     private final UserRepository userRepository;
+    private final MembershipRepository membershipRepository;
 
     public BookingResponseDTO getBookingById(Long id) {
         Booking booking = bookingRepository.findById(id).orElseThrow(() -> new ResourceDoesNotExistException(id, "Booking"));
@@ -37,6 +41,9 @@ public class BookingService {
         Long parkingSpotId = bookingRequestDTO.getParkingSpotId();
         ParkingSpot parkingSpot = parkingSpotRepository.findById(parkingSpotId).orElseThrow(() ->
                 new ResourceDoesNotExistException(parkingSpotId, "ParkingSpot"));
+        Long residentialCommunityId = parkingSpot.getResidentialCommunity().getId();
+        membershipRepository.findActiveByUserIdAndResidentialCommunityId(bookingRequestDTO.getUserId(), residentialCommunityId)
+                .orElseThrow(() -> new BookingException("The user with id [%s]  is not part of the residential community with id [%s].".formatted(bookingRequestDTO.getUserId(), residentialCommunityId)));
         checkRequestedInterval(bookingRequestDTO, parkingSpot);
         Booking booking = new Booking();
         configureBooking(booking, parkingSpot, bookingRequestDTO, BookingStatus.BOOKED);
@@ -55,9 +62,10 @@ public class BookingService {
     }
 
 
-    public void removeBookingById(Long id) {
+    public void softDeleteBookingById(Long id) {
         Booking booking = bookingRepository.findById(id).orElseThrow(() -> new ResourceDoesNotExistException(id, "Booking"));
-        bookingRepository.delete(booking);
+        booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
     }
 
     // utility methods
@@ -72,11 +80,14 @@ public class BookingService {
 
 
     private void checkRequestedInterval(BookingRequestDTO bookingRequestDTO, ParkingSpot parkingSpot) {
-        if(!bookingRequestDTO.getStartTime().isBefore(bookingRequestDTO.getEndTime()))
+        Instant startTime = bookingRequestDTO.getStartTime();
+        if(startTime.isBefore(Instant.now().minus(5, ChronoUnit.MINUTES)))
+            throw new InvalidArgumentException("The start time of the booking cannot be later than the end time.");
+        if(!startTime.isBefore(bookingRequestDTO.getEndTime()))
             throw new InvalidArgumentException("The start time of the booking cannot be later than the end time.");
         List<Booking> bookings = bookingRepository.findByParkingSpot(parkingSpot);
         for (Booking b : bookings) {
-            if(doIntervalsOverlap(b.getStartTime(), b.getEndTime(), bookingRequestDTO.getStartTime(), bookingRequestDTO.getEndTime()))
+            if(doIntervalsOverlap(b.getStartTime(), b.getEndTime(), startTime, bookingRequestDTO.getEndTime()))
                 throw new InvalidArgumentException("The parking spot with id [%s] is not available for the selected period".formatted(parkingSpot.getId()));
         }
 

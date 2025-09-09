@@ -34,4 +34,14 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(BookingException.class)
+    public ResponseEntity<ExceptionResponse> bookingException(BookingException e) {
+        return new ResponseEntity<>(ExceptionResponse
+                .builder()
+                .withMessage(e.getMessage())
+                .withStatus(HttpStatus.BAD_REQUEST)
+                .build(),
+                HttpStatus.BAD_REQUEST);
+    }
+
 }

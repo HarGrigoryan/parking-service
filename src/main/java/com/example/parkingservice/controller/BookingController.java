@@ -37,8 +37,8 @@ public class BookingController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBookingById(@PathVariable Long id) {
-        bookingService.removeBookingById(id);
+    public ResponseEntity<Void> softDeleteBookingById(@PathVariable Long id) {
+        bookingService.softDeleteBookingById(id);
         return ResponseEntity.noContent().build();
     }
 }
