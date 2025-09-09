@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Getter
@@ -43,5 +45,13 @@ public class BookingResponseDTO {
         dto.updatedAt = booking.getUpdatedAt();
         dto.status = booking.getStatus();
         return dto;
+    }
+
+    public static List<BookingResponseDTO> from(List<Booking> bookings) {
+        List<BookingResponseDTO> dtos = new ArrayList<>();
+        for(Booking booking : bookings) {
+            dtos.add(from(booking));
+        }
+        return dtos;
     }
 }

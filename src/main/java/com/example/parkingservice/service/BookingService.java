@@ -4,6 +4,7 @@ import com.example.parkingservice.criteria.BookingSearchCriteria;
 import com.example.parkingservice.dto.BookingRequestDTO;
 import com.example.parkingservice.dto.BookingResponseDTO;
 import com.example.parkingservice.dto.PageResponseDTO;
+import com.example.parkingservice.enums.BookingRecurrence;
 import com.example.parkingservice.enums.BookingStatus;
 import com.example.parkingservice.exception.BookingException;
 import com.example.parkingservice.exception.InvalidArgumentException;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,17 +52,28 @@ public class BookingService {
         return  BookingResponseDTO.from(booking);
     }
 
-    public BookingResponseDTO createBooking(BookingRequestDTO bookingRequestDTO) {
+
+    public List<BookingResponseDTO> createBooking(BookingRequestDTO bookingRequestDTO) {
         Long parkingSpotId = bookingRequestDTO.getParkingSpotId();
         ParkingSpot parkingSpot = parkingSpotRepository.findById(parkingSpotId).orElseThrow(() ->
                 new ResourceDoesNotExistException(parkingSpotId, "ParkingSpot"));
         Long residentialCommunityId = parkingSpot.getResidentialCommunity().getId();
         membershipRepository.findActiveByUserIdAndResidentialCommunityId(bookingRequestDTO.getUserId(), residentialCommunityId)
                 .orElseThrow(() -> new BookingException("The user with id [%s]  is not part of the residential community with id [%s].".formatted(bookingRequestDTO.getUserId(), residentialCommunityId)));
-        checkRequestedInterval(bookingRequestDTO, parkingSpot);
-        Booking booking = new Booking();
-        configureBooking(booking, parkingSpot, bookingRequestDTO, BookingStatus.BOOKED);
-        return BookingResponseDTO.from(bookingRepository.save(booking));
+        BookingRecurrence recurrence = bookingRequestDTO.getRecurrence();
+        int repetitions = recurrence == BookingRecurrence.NONE ? 1 : bookingRequestDTO.getRepetitions();
+        List<Booking> bookingsToSave = new ArrayList<>();
+        for(int i = 0; i < repetitions; i++) {
+            int dayCount = recurrence.getDayCount();
+            Instant startPlus = bookingRequestDTO.getStartTime().plus(i * dayCount, ChronoUnit.DAYS );
+            Instant endPlus = bookingRequestDTO.getEndTime().plus(i * dayCount, ChronoUnit.DAYS);
+            checkRequestedInterval(startPlus, endPlus, parkingSpot);
+            Booking booking = new Booking();
+            configureBooking(booking, parkingSpot,
+                   startPlus, endPlus, bookingRequestDTO, BookingStatus.BOOKED);
+            bookingsToSave.add(booking);
+        }
+        return BookingResponseDTO.from(bookingRepository.saveAll(bookingsToSave));
     }
 
     public BookingResponseDTO updateBooking(BookingRequestDTO bookingRequestDTO, Long id) {
@@ -69,8 +82,8 @@ public class BookingService {
         ParkingSpot parkingSpot = parkingSpotRepository.findById(parkingSpotId).orElseThrow(() ->
                 new ResourceDoesNotExistException(parkingSpotId, "ParkingSpot"));
         if(!bookingRequestDTO.getStartTime().equals(booking.getStartTime()) || !bookingRequestDTO.getEndTime().equals(booking.getEndTime()))
-            checkRequestedInterval(bookingRequestDTO, parkingSpot);
-        configureBooking(booking, parkingSpot, bookingRequestDTO, booking.getStatus());
+            checkRequestedInterval(bookingRequestDTO.getStartTime(), bookingRequestDTO.getEndTime(), parkingSpot);
+        configureBooking(booking, parkingSpot, bookingRequestDTO.getStartTime(), bookingRequestDTO.getEndTime(), bookingRequestDTO, booking.getStatus());
         return BookingResponseDTO.from(bookingRepository.save(booking));
     }
 
@@ -82,25 +95,24 @@ public class BookingService {
     }
 
     // utility methods
-    private void configureBooking(Booking booking, ParkingSpot parkingSpot, BookingRequestDTO bookingRequestDTO, BookingStatus bookingStatus) {
+    private void configureBooking(Booking booking, ParkingSpot parkingSpot,Instant startTime, Instant endTime, BookingRequestDTO bookingRequestDTO, BookingStatus bookingStatus) {
         booking.setParkingSpot(parkingSpot);
-        booking.setStartTime(bookingRequestDTO.getStartTime());
-        booking.setEndTime(bookingRequestDTO.getEndTime());
+        booking.setStartTime(startTime);
+        booking.setEndTime(endTime);
         booking.setUser(userRepository.findById(bookingRequestDTO.getUserId()).orElseThrow(() -> new ResourceDoesNotExistException(bookingRequestDTO.getUserId(), "User")));
         BookingStatus status = bookingRequestDTO.getStatus();
         booking.setStatus(Objects.requireNonNullElse(status, bookingStatus));
     }
 
 
-    private void checkRequestedInterval(BookingRequestDTO bookingRequestDTO, ParkingSpot parkingSpot) {
-        Instant startTime = bookingRequestDTO.getStartTime();
+    private void checkRequestedInterval(Instant startTime, Instant endTime, ParkingSpot parkingSpot) {
         if(startTime.isBefore(Instant.now().minus(5, ChronoUnit.MINUTES)))
             throw new InvalidArgumentException("The start time of the booking cannot be later than the end time.");
-        if(!startTime.isBefore(bookingRequestDTO.getEndTime()))
+        if(!startTime.isBefore(endTime))
             throw new InvalidArgumentException("The start time of the booking cannot be later than the end time.");
         List<Booking> bookings = bookingRepository.findByParkingSpot(parkingSpot);
         for (Booking b : bookings) {
-            if(doIntervalsOverlap(b.getStartTime(), b.getEndTime(), startTime.minus(BUFFER), bookingRequestDTO.getEndTime().plus(BUFFER)))
+            if(doIntervalsOverlap(b.getStartTime(), b.getEndTime(), startTime.minus(BUFFER), endTime.plus(BUFFER)))
                 throw new InvalidArgumentException("The parking spot with id [%s] is not available for the selected period".formatted(parkingSpot.getId()));
         }
 

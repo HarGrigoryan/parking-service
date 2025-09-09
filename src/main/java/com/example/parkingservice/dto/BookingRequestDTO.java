@@ -1,5 +1,6 @@
 package com.example.parkingservice.dto;
 
+import com.example.parkingservice.enums.BookingRecurrence;
 import com.example.parkingservice.enums.BookingStatus;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,4 +20,8 @@ public class BookingRequestDTO {
     private Long parkingSpotId;
 
     private BookingStatus status;
+
+    private BookingRecurrence recurrence = BookingRecurrence.NONE;
+
+    private Integer repetitions = 5; // default value
 }
