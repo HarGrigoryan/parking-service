@@ -7,14 +7,11 @@ import lombok.Setter;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
-import java.time.Duration;
 import java.time.Instant;
 
 @Setter
 @Getter
 public class ParkingSpotSearchCriteria extends SearchCriteria{
-
-    public static final Duration BUFFER = Duration.ofMinutes(5);
 
     private String spotNumber;
 

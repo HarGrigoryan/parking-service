@@ -14,10 +14,13 @@ import com.example.parkingservice.persistance.repository.BookingRepository;
 import com.example.parkingservice.persistance.repository.MembershipRepository;
 import com.example.parkingservice.persistance.repository.ParkingSpotRepository;
 import com.example.parkingservice.persistance.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -31,6 +34,16 @@ public class BookingService {
     private final ParkingSpotRepository parkingSpotRepository;
     private final UserRepository userRepository;
     private final MembershipRepository membershipRepository;
+
+    @Value("${booking.interval.buffer}")
+    private Integer buffer;
+
+    public Duration BUFFER ;
+
+    @PostConstruct
+    public void init() {
+        BUFFER = Duration.ofMinutes(buffer);
+    }
 
     public BookingResponseDTO getBookingById(Long id) {
         Booking booking = bookingRepository.findById(id).orElseThrow(() -> new ResourceDoesNotExistException(id, "Booking"));
@@ -87,7 +100,7 @@ public class BookingService {
             throw new InvalidArgumentException("The start time of the booking cannot be later than the end time.");
         List<Booking> bookings = bookingRepository.findByParkingSpot(parkingSpot);
         for (Booking b : bookings) {
-            if(doIntervalsOverlap(b.getStartTime(), b.getEndTime(), startTime, bookingRequestDTO.getEndTime()))
+            if(doIntervalsOverlap(b.getStartTime(), b.getEndTime(), startTime.minus(BUFFER), bookingRequestDTO.getEndTime().plus(BUFFER)))
                 throw new InvalidArgumentException("The parking spot with id [%s] is not available for the selected period".formatted(parkingSpot.getId()));
         }
 

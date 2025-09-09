@@ -11,10 +11,13 @@ import com.example.parkingservice.persistance.entity.ParkingSpot;
 import com.example.parkingservice.persistance.entity.ResidentialCommunity;
 import com.example.parkingservice.persistance.repository.ParkingSpotRepository;
 import com.example.parkingservice.persistance.repository.ResidentialCommunityRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -24,6 +27,16 @@ public class ParkingSpotService {
 
     private final ParkingSpotRepository parkingSpotRepository;
     private final ResidentialCommunityRepository residentialCommunityRepository;
+
+    @Value("${booking.interval.buffer}")
+    private Integer buffer;
+
+    private Duration BUFFER;
+
+    @PostConstruct
+    public void init() {
+        BUFFER = Duration.ofMinutes(buffer);
+    }
 
     public ParkingSpotResponseDTO getById(Long id) {
         ParkingSpot parkingSpot = parkingSpotRepository.findById(id).orElse(null);
@@ -80,8 +93,8 @@ public class ParkingSpotService {
             searchCriteria.setStartTime(Instant.now());
         if(searchCriteria.getEndTime() == null)
             searchCriteria.setEndTime(searchCriteria.getStartTime().plus(1, ChronoUnit.HOURS));
-        searchCriteria.setBufferedStartTime(searchCriteria.getStartTime().minus(ParkingSpotSearchCriteria.BUFFER));
-        searchCriteria.setBufferedEndTime(searchCriteria.getEndTime().plus(ParkingSpotSearchCriteria.BUFFER));
+        searchCriteria.setBufferedStartTime(searchCriteria.getStartTime().minus(BUFFER));
+        searchCriteria.setBufferedEndTime(searchCriteria.getEndTime().plus(BUFFER));
         if(!searchCriteria.getStartTime().isBefore(searchCriteria.getEndTime()))
             throw new InvalidArgumentException("End time cannot be after start time.");
         Page<ParkingSpotResponseDTO> page = parkingSpotRepository.findAll(searchCriteria, searchCriteria.buildPageRequest());
