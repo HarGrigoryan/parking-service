@@ -65,8 +65,8 @@ public class BookingService {
         List<Booking> bookingsToSave = new ArrayList<>();
         for(int i = 0; i < repetitions; i++) {
             int dayCount = recurrence.getDayCount();
-            Instant startPlus = bookingRequestDTO.getStartTime().plus(i * dayCount, ChronoUnit.DAYS );
-            Instant endPlus = bookingRequestDTO.getEndTime().plus(i * dayCount, ChronoUnit.DAYS);
+            Instant startPlus = bookingRequestDTO.getStartTime().plus((long) i * dayCount, ChronoUnit.DAYS );
+            Instant endPlus = bookingRequestDTO.getEndTime().plus((long) i * dayCount, ChronoUnit.DAYS);
             checkRequestedInterval(startPlus, endPlus, parkingSpot);
             Booking booking = new Booking();
             configureBooking(booking, parkingSpot,
