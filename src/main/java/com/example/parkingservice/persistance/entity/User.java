@@ -35,7 +35,7 @@ public class User {
     private String password;
 
     @Column(name = "enabled", nullable = false, columnDefinition = "boolean DEFAULT true")
-    private boolean enabled;
+    private Boolean enabled = true;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_at", nullable = false, updatable = false)
