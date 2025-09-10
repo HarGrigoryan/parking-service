@@ -20,5 +20,5 @@ public interface MembershipRepository extends JpaRepository<Membership, Long> {
         AND m.user.id = :userId
         AND m.residentialCommunity.id = :residentialCommunityId
         """)
-    Optional<Object> findActiveByUserIdAndResidentialCommunityId(Long userId, Long residentialCommunityId);
+    Optional<Membership> findActiveByUserIdAndResidentialCommunityId(Long userId, Long residentialCommunityId);
 }
