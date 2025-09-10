@@ -14,6 +14,13 @@ import java.util.List;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
+
+    @Query("""
+        SELECT b
+        FROM Booking b
+        WHERE b.parkingSpot = :parkingSpot
+        AND b.status = 'BOOKED' OR b.status = 'PARKED'
+        """)
     List<Booking> findByParkingSpot(ParkingSpot parkingSpot);
 
 

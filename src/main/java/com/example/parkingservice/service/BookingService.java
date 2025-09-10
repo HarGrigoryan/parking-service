@@ -40,7 +40,7 @@ public class BookingService {
     @Value("${booking.interval.buffer}")
     private Integer buffer;
 
-    public Duration BUFFER ;
+    public Duration BUFFER;
 
     @PostConstruct
     public void init() {
@@ -57,9 +57,7 @@ public class BookingService {
         Long parkingSpotId = bookingRequestDTO.getParkingSpotId();
         ParkingSpot parkingSpot = parkingSpotRepository.findById(parkingSpotId).orElseThrow(() ->
                 new ResourceDoesNotExistException(parkingSpotId, "ParkingSpot"));
-        Long residentialCommunityId = parkingSpot.getResidentialCommunity().getId();
-        membershipRepository.findActiveByUserIdAndResidentialCommunityId(bookingRequestDTO.getUserId(), residentialCommunityId)
-                .orElseThrow(() -> new BookingException("The user with id [%s]  is not part of the residential community with id [%s].".formatted(bookingRequestDTO.getUserId(), residentialCommunityId)));
+        validateMembership(bookingRequestDTO, parkingSpot);
         BookingRecurrence recurrence = bookingRequestDTO.getRecurrence();
         int repetitions = recurrence == BookingRecurrence.NONE ? 1 : bookingRequestDTO.getRepetitions();
         List<Booking> bookingsToSave = new ArrayList<>();
@@ -69,8 +67,9 @@ public class BookingService {
             Instant endPlus = bookingRequestDTO.getEndTime().plus((long) i * dayCount, ChronoUnit.DAYS);
             checkRequestedInterval(startPlus, endPlus, parkingSpot);
             Booking booking = new Booking();
+            BookingStatus booked = bookingRequestDTO.getStatus() == null ? BookingStatus.BOOKED : bookingRequestDTO.getStatus();
             configureBooking(booking, parkingSpot,
-                   startPlus, endPlus, bookingRequestDTO, BookingStatus.BOOKED);
+                   startPlus, endPlus, bookingRequestDTO, booked);
             bookingsToSave.add(booking);
         }
         return BookingResponseDTO.from(bookingRepository.saveAll(bookingsToSave));
@@ -81,6 +80,8 @@ public class BookingService {
         Long parkingSpotId = bookingRequestDTO.getParkingSpotId();
         ParkingSpot parkingSpot = parkingSpotRepository.findById(parkingSpotId).orElseThrow(() ->
                 new ResourceDoesNotExistException(parkingSpotId, "ParkingSpot"));
+        if(!parkingSpot.getId().equals(booking.getParkingSpot().getId()))
+            validateMembership(bookingRequestDTO, parkingSpot);
         if(!bookingRequestDTO.getStartTime().equals(booking.getStartTime()) || !bookingRequestDTO.getEndTime().equals(booking.getEndTime()))
             checkRequestedInterval(bookingRequestDTO.getStartTime(), bookingRequestDTO.getEndTime(), parkingSpot);
         configureBooking(booking, parkingSpot, bookingRequestDTO.getStartTime(), bookingRequestDTO.getEndTime(), bookingRequestDTO, booking.getStatus());
@@ -104,16 +105,21 @@ public class BookingService {
         booking.setStatus(Objects.requireNonNullElse(status, bookingStatus));
     }
 
+    private void validateMembership(BookingRequestDTO bookingRequestDTO, ParkingSpot parkingSpot) {
+        Long residentialCommunityId = parkingSpot.getResidentialCommunity().getId();
+        membershipRepository.findActiveByUserIdAndResidentialCommunityId(bookingRequestDTO.getUserId(), residentialCommunityId)
+                .orElseThrow(() -> new BookingException("The user with id [%s]  is not part of the residential community with id [%s].".formatted(bookingRequestDTO.getUserId(), residentialCommunityId)));
+    }
 
     private void checkRequestedInterval(Instant startTime, Instant endTime, ParkingSpot parkingSpot) {
         if(startTime.isBefore(Instant.now().minus(5, ChronoUnit.MINUTES)))
-            throw new InvalidArgumentException("The start time of the booking cannot be later than the end time.");
+            throw new InvalidArgumentException("The start time of the booking earlier than the current time.");
         if(!startTime.isBefore(endTime))
             throw new InvalidArgumentException("The start time of the booking cannot be later than the end time.");
         List<Booking> bookings = bookingRepository.findByParkingSpot(parkingSpot);
         for (Booking b : bookings) {
             if(doIntervalsOverlap(b.getStartTime(), b.getEndTime(), startTime.minus(BUFFER), endTime.plus(BUFFER)))
-                throw new InvalidArgumentException("The parking spot with id [%s] is not available for the selected period".formatted(parkingSpot.getId()));
+                throw new InvalidArgumentException("The parking spot with id [%s] is not available for the selected period: [%s, %s]".formatted(parkingSpot.getId(), startTime, endTime));
         }
 
     }
