@@ -89,14 +89,16 @@ public class ParkingSpotService {
 
     public PageResponseDTO<ParkingSpotResponseDTO> getParkingSpots(ParkingSpotSearchCriteria searchCriteria) {
         //setting default values
-        if(searchCriteria.getStartTime() == null)
-            searchCriteria.setStartTime(Instant.now());
-        if(searchCriteria.getEndTime() == null)
-            searchCriteria.setEndTime(searchCriteria.getStartTime().plus(1, ChronoUnit.HOURS));
-        searchCriteria.setBufferedStartTime(searchCriteria.getStartTime().minus(BUFFER));
-        searchCriteria.setBufferedEndTime(searchCriteria.getEndTime().plus(BUFFER));
-        if(!searchCriteria.getStartTime().isBefore(searchCriteria.getEndTime()))
-            throw new InvalidArgumentException("End time cannot be after start time.");
+        if(searchCriteria.getOnlyAvailable()) {
+            if (searchCriteria.getStartTime() == null)
+                searchCriteria.setStartTime(Instant.now());
+            if (searchCriteria.getEndTime() == null)
+                searchCriteria.setEndTime(searchCriteria.getStartTime().plus(1, ChronoUnit.HOURS));
+            searchCriteria.setBufferedStartTime(searchCriteria.getStartTime().minus(BUFFER));
+            searchCriteria.setBufferedEndTime(searchCriteria.getEndTime().plus(BUFFER));
+            if (!searchCriteria.getStartTime().isBefore(searchCriteria.getEndTime()))
+                throw new InvalidArgumentException("End time cannot be after start time.");
+        }
         Page<ParkingSpotResponseDTO> page = parkingSpotRepository.findAll(searchCriteria, searchCriteria.buildPageRequest());
         return PageResponseDTO.from(page);
     }
