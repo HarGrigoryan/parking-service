@@ -99,9 +99,9 @@ public class ParkingSpotService {
             searchCriteria.setBufferedStartTime(searchCriteria.getStartTime().minus(BUFFER));
             searchCriteria.setBufferedEndTime(searchCriteria.getEndTime().plus(BUFFER));
             if (!searchCriteria.getStartTime().isBefore(searchCriteria.getEndTime()))
-                throw new InvalidArgumentException("End time cannot be after start time.");
+                throw new InvalidArgumentException("End time cannot be before start time.");
         }
-        Page<ParkingSpotResponseDTO> page = parkingSpotRepository.findAll(searchCriteria, searchCriteria.buildPageRequest());
+            Page<ParkingSpotResponseDTO> page = parkingSpotRepository.findAll(searchCriteria, searchCriteria.buildPageRequest());
         return PageResponseDTO.from(page);
     }
 }

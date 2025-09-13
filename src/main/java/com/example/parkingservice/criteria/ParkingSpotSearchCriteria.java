@@ -10,33 +10,47 @@ import org.springframework.data.domain.Sort;
 import java.time.Instant;
 
 @Setter
-@Getter
 public class ParkingSpotSearchCriteria extends SearchCriteria{
 
+    @Getter
     private String spotNumber;
 
+    @Getter
     private ParkingSpotType type;
 
     private ParkingSpotStatus status;
 
+    @Getter
     private Long residentialCommunityId;
 
-    private Boolean onlyAvailable;
+    @Getter
+    private Boolean onlyAvailable = false;
 
+    @Getter
     private Instant startTime;
 
+    @Getter
     private Instant endTime;
 
+    @Getter
     private String sortBy = "id";
 
+    @Getter
     private Instant bufferedStartTime;
 
+    @Getter
     private Instant bufferedEndTime;
 
     @Override
     public PageRequest buildPageRequest() {
         PageRequest pageRequest = super.buildPageRequest();
         return pageRequest.withSort(Sort.by(sortBy).ascending());
+    }
+
+    public ParkingSpotStatus getStatus() {
+        if(onlyAvailable)
+            return ParkingSpotStatus.AVAILABLE;
+        return status;
     }
 
 }
