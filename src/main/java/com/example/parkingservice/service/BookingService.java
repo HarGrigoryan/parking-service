@@ -64,16 +64,18 @@ public class BookingService {
         int repetitions = recurrence == BookingRecurrence.NONE ? 1 : bookingRequestDTO.getRepetitions();
         List<Booking> bookingsToSave = new ArrayList<>();
         List<Booking> bookings = bookingRepository.findByParkingSpot(parkingSpot);
-        for(int i = 0; i < repetitions; i++) {
-            int dayCount = recurrence.getDayCount();
-            Instant startPlus = bookingRequestDTO.getStartTime().plus((long) i * dayCount, ChronoUnit.DAYS);
-            Instant endPlus = bookingRequestDTO.getEndTime().plus((long) i * dayCount, ChronoUnit.DAYS);
+        Instant startPlus = bookingRequestDTO.getStartTime();
+        Instant endPlus = bookingRequestDTO.getEndTime();
+        while(repetitions > 0) {
             checkRequestedInterval(startPlus, endPlus, parkingSpot, bookings);
             Booking booking = new Booking();
             BookingStatus booked = bookingRequestDTO.getStatus() == null ? BookingStatus.BOOKED : bookingRequestDTO.getStatus();
             configureBooking(booking, parkingSpot,
                    startPlus, endPlus, bookingRequestDTO, booked);
             bookingsToSave.add(booking);
+            startPlus = recurrence.getNextInstant(startPlus);
+            endPlus = recurrence.getNextInstant(endPlus);
+            repetitions--;
         }
         return BookingResponseDTO.from(bookingRepository.saveAll(bookingsToSave));
     }
