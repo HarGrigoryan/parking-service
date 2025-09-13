@@ -38,10 +38,9 @@ public class ParkingSpotController {
         return ResponseEntity.ok(parkingSpotService.updateParkingSpot(id, parkingSpotRequestDTO));
     }
 
-    // deletes all bookings affiliated with this spot
     @DeleteMapping("/{id}")
-     public ResponseEntity<Void> deleteParkingSpotById(@PathVariable Long id) {
-        parkingSpotService.deleteParkingSpotById(id);
+     public ResponseEntity<Void> softDeleteParkingSpotById(@PathVariable Long id) {
+        parkingSpotService.softDeleteParkingSpotById(id);
         return ResponseEntity.noContent().build();
     }
 

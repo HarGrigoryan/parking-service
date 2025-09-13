@@ -4,6 +4,7 @@ import com.example.parkingservice.criteria.ParkingSpotSearchCriteria;
 import com.example.parkingservice.dto.PageResponseDTO;
 import com.example.parkingservice.dto.ParkingSpotRequestDTO;
 import com.example.parkingservice.dto.ParkingSpotResponseDTO;
+import com.example.parkingservice.enums.ParkingSpotStatus;
 import com.example.parkingservice.exception.InvalidArgumentException;
 import com.example.parkingservice.exception.ResourceAlreadyExistsException;
 import com.example.parkingservice.exception.ResourceDoesNotExistException;
@@ -40,14 +41,14 @@ public class ParkingSpotService {
 
     public ParkingSpotResponseDTO getById(Long id) {
         ParkingSpot parkingSpot = parkingSpotRepository.findById(id).orElse(null);
-        if(parkingSpot == null)
+        if(parkingSpot == null || parkingSpot.getStatus() == ParkingSpotStatus.UNAVAILABLE)
             throw new ResourceDoesNotExistException(id, "Parking spot");
         return ParkingSpotResponseDTO.fromParkingSpot(parkingSpot);
     }
 
     public ParkingSpotResponseDTO createParkingSpot(ParkingSpotRequestDTO parkingSpotRequestDTO) {
         ParkingSpot parkingSpot = parkingSpotRepository.findBySpotNumberAndResidentialCommunityId(parkingSpotRequestDTO.getSpotNumber(), parkingSpotRequestDTO.getResidentialCommunityId());
-        if(parkingSpot != null)
+        if(parkingSpot != null && parkingSpot.getStatus() != ParkingSpotStatus.AVAILABLE)
             throw new ResourceAlreadyExistsException("Parking Spot already exists");
         parkingSpot = new ParkingSpot();
         parkingSpot.setSpotNumber(parkingSpotRequestDTO.getSpotNumber());
@@ -64,7 +65,7 @@ public class ParkingSpotService {
     public ParkingSpotResponseDTO updateParkingSpot(Long id, ParkingSpotRequestDTO parkingSpotRequestDTO) {
 
         ParkingSpot parkingSpot = parkingSpotRepository.findById(id).orElse(null);
-        if(parkingSpot == null)
+        if(parkingSpot == null || parkingSpot.getStatus() == ParkingSpotStatus.UNAVAILABLE)
             throw new ResourceDoesNotExistException(id, "Parking spot");
         String spotNumber = parkingSpotRequestDTO.getSpotNumber();
         Long residentialCommunityId = parkingSpotRequestDTO.getResidentialCommunityId();
@@ -82,9 +83,10 @@ public class ParkingSpotService {
         return ParkingSpotResponseDTO.fromParkingSpot(parkingSpotRepository.save(parkingSpot));
     }
 
-    public void deleteParkingSpotById(Long id) {
+    public void softDeleteParkingSpotById(Long id) {
         ParkingSpot parkingSpot = parkingSpotRepository.findById(id).orElseThrow(() -> new ResourceDoesNotExistException(id, "Parking spot"));
-        parkingSpotRepository.delete(parkingSpot);
+        parkingSpot.setStatus(ParkingSpotStatus.UNAVAILABLE);
+        parkingSpotRepository.save(parkingSpot);
     }
 
     public PageResponseDTO<ParkingSpotResponseDTO> getParkingSpots(ParkingSpotSearchCriteria searchCriteria) {
